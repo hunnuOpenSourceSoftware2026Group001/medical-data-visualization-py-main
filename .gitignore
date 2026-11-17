@@ -1,0 +1,41 @@
+# ===== 本地密钥，禁止提交 =====
+.env
+.env.*
+!.env.example
+
+# ===== Python =====
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# ===== 前端 =====
+node_modules/
+dist/
+front-end-template-1-master/node_modules/
+front-end-template-1-master/dist/
+
+# ===== 本地数据库 / 运行产物 =====
+mysql-data/
+*.log
+sync_status.json
+
+# ===== 模型权重（原压缩包只有 LFS 指针，不能提交，否则 GitHub 拒绝 push） =====
+machine/medical_model.pth
+machine/bert-base-chinese/pytorch_model.bin
+
+# ===== IDE / 系统 =====
+.idea/
+.vscode/
+.DS_Store
+__MACOSX/
+
+# ===== 本地验证截图（如需入仓请手动 git add -f） =====
+home.png
+ai-chat.png
+
+# ===== 安装包（体积大，不入仓） =====
+node-v12.16.1-x64.msi
+python-3.8.0-amd64.exe

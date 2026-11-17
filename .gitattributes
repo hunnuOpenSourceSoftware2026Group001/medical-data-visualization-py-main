@@ -1,0 +1,4 @@
+# 说明：当前仓库中的 .bin / .pth 文件是原项目留下的 Git LFS 指针（约 134 字节），
+# 真实权重并没有随压缩包提供。为了避免 clone/push 时触发 LFS 下载失败，
+# 这里不启用 LFS 过滤，指针文件按普通文本提交。
+# 真实模型请由成员 4 从原仓库执行 git lfs pull，或使用 spiders/models 下的 TF-IDF 模型。
