@@ -37,6 +37,17 @@ export default {
             this.currentDateTime = this.getCurrentDateTime();
         }, 1000);
     },
+    watch: {
+        // 浏览器前进/后退、直接在地址栏切换路由时也同步导航高亮
+        '$route'(to) {
+            this.activePath = to.path;
+        }
+    },
+    beforeDestroy() {
+        if (this.interval) {
+            clearInterval(this.interval);
+        }
+    },
     methods:{
         getCurrentDateTime() {
             const now = new Date();
@@ -107,18 +118,22 @@ export default {
         align-items: center;
         justify-content: space-between;
         #header-left{
+            flex-shrink: 0;
             h1{
                 color:#fff;
                 font-size: 23px;
+                white-space: nowrap;
             }
         }
         #header-nav{
             display: flex;
+            flex-shrink: 0;
             .header-nav-item{
                 margin-right: 15px;
                 padding:10px 40px;
                 border: 1px solid transparent;
                 border-radius: 80px;
+                white-space: nowrap;
             }
             .header-nav-item.active{
                 background: #1b2d4a;
@@ -127,10 +142,57 @@ export default {
                 text-decoration: none;
                 color:#52a2e4;
                 font-size: 15px;
+                white-space: nowrap;
             }
+        }
+        #header-time{
+            flex-shrink: 0;
+            white-space: nowrap;
         }
         // #header-time{
         //     font-size: 17px;
         // }
+    }
+
+    @media (max-width: 1700px) {
+        #header {
+            padding: 10px 30px 0 30px;
+
+            #header-left h1 {
+                font-size: 20px;
+            }
+
+            #header-nav .header-nav-item {
+                margin-right: 8px;
+                padding: 9px 22px;
+            }
+
+            #header-time {
+                font-size: 14px;
+            }
+        }
+    }
+
+    @media (max-width: 1366px) {
+        #header {
+            padding: 8px 16px 0 16px;
+
+            #header-left h1 {
+                font-size: 17px;
+            }
+
+            #header-nav .header-nav-item {
+                margin-right: 4px;
+                padding: 8px 12px;
+            }
+
+            #header-nav .nav {
+                font-size: 13px;
+            }
+
+            #header-time {
+                font-size: 12px;
+            }
+        }
     }
 </style>

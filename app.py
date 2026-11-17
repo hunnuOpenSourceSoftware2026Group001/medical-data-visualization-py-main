@@ -32,9 +32,12 @@ from utils.db_config import get_db_connection
 
 from utils.getAllData import *
 from utils.getPublicData import *
-from machine.tree import *
 
 load_dotenv()
+
+# 说明：machine.tree 依赖 PyTorch/Transformers，且仓库内的模型文件是 Git LFS 指针。
+# 这里不在模块顶层强制导入，避免缺少模型环境时整个 Flask 服务无法启动；
+# 下方会尝试导入 MedicalAI，失败时自动降级，仅关闭“在线预测”能力。
 
 # ================= [新增] AI 模块导入 =================
 try:

@@ -1,8 +1,12 @@
 <template>
   <div class="home">
     <transition name="fade" mode="out-in">
-      <dv-loading v-if="!config4.data.length">Loading...</dv-loading>
-      <dv-border-box-10 class="outer-border">
+      <div v-if="loadError && !config4.data.length" class="home-error">
+        <p>首页数据加载失败，请确认后端服务和数据库正常。</p>
+        <button @click="fetchHomeData">重新加载</button>
+      </div>
+      <dv-loading v-else-if="!config4.data.length">Loading...</dv-loading>
+      <dv-border-box-10 v-else class="outer-border">
         <div class="naca">
           <div class="index-header" style="margin-top: 5px">
             <div>
@@ -188,6 +192,9 @@
               </div>
             </div>
 
+            <span v-if="lastUpdated" class="data-updated">
+              更新于 {{ lastUpdated }}
+            </span>
             <button class="filter-reset" @click="resetFilters">重置筛选</button>
             <button class="fullscreen-btn" @click="toggleFullScreen">
               {{ isFullscreen ? '退出全屏' : '全屏展示' }}
@@ -405,6 +412,8 @@ export default {
     return {
       // 原始病例数据与过滤后数据
       allCasesData: [],
+      loadError: false,
+      lastUpdated: "",
       currentIndex: 0,
       pieData: [],
       casesData: [],
@@ -1088,24 +1097,37 @@ export default {
     },
     // 从后端拉取最新数据（不改后端）
     async fetchHomeData() {
-      const res = await this.$http.get("/getHomeData");
-      const data = res.data;
-      // 原始病例列表
-      this.allCasesData = data.casesData || [];
-      this.casesData = this.allCasesData;
+      try {
+        const res = await this.$http.get("/getHomeData");
+        const data = res && res.data;
+        if (!data || !Array.isArray(data.casesData)) {
+          throw new Error("首页数据格式异常");
+        }
+        this.loadError = false;
 
-      // 为筛选下拉准备疾病与时间选项
-      const diseaseSet = new Set();
-      const timeSet = new Set();
-      this.allCasesData.forEach((row) => {
-        if (row[1]) diseaseSet.add(row[1]);
-        if (row[4]) timeSet.add(row[4]);
-      });
-      this.diseaseOptions = Array.from(diseaseSet);
-      this.timeOptions = Array.from(timeSet);
+        // 原始病例列表
+        this.allCasesData = data.casesData || [];
+        this.casesData = this.allCasesData;
 
-      // 基于病例列表前端重算统计，支持筛选/联动
-      this.rebuildStatsFromCases(this.allCasesData);
+        // 为筛选下拉准备疾病与时间选项
+        const diseaseSet = new Set();
+        const timeSet = new Set();
+        this.allCasesData.forEach((row) => {
+          if (row[1]) diseaseSet.add(row[1]);
+          if (row[4]) timeSet.add(row[4]);
+        });
+        this.diseaseOptions = Array.from(diseaseSet);
+        this.timeOptions = Array.from(timeSet);
+
+        // 基于病例列表前端重算统计，支持筛选/联动
+        this.rebuildStatsFromCases(this.allCasesData);
+        this.lastUpdated = new Date().toLocaleTimeString("zh-CN", {
+          hour12: false,
+        });
+      } catch (error) {
+        console.error("首页数据加载失败:", error);
+        this.loadError = true;
+      }
     },
   },
   async created() {
@@ -1284,6 +1306,37 @@ export default {
   font-size: 12px;
   color: #e6f7ff;
   z-index: 2;
+}
+
+.data-updated {
+  color: rgba(154, 214, 255, 0.65);
+  font-size: 11px;
+}
+
+.home-error {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  min-width: 340px;
+  padding: 24px 30px;
+  border: 1px solid rgba(255, 82, 82, 0.45);
+  border-radius: 8px;
+  background: rgba(10, 25, 47, 0.95);
+  color: #ff8a80;
+  text-align: center;
+  font-size: 14px;
+}
+
+.home-error button {
+  margin-top: 14px;
+  padding: 7px 18px;
+  border: 1px solid rgba(82, 162, 228, 0.6);
+  border-radius: 16px;
+  background: rgba(82, 162, 228, 0.15);
+  color: #52a2e4;
+  cursor: pointer;
 }
 
 .filter-group {

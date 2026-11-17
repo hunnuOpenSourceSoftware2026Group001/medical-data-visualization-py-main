@@ -27,7 +27,21 @@
           :style="{ height: '520px' }"
         >
           <div class="section-inner section-table-inner">
-            <div class="section-title">数据表格</div>
+            <div class="section-title-row">
+              <div class="section-title">数据表格</div>
+              <div class="section-tools">
+                <span v-if="lastRefreshedAt" class="refresh-time">
+                  刷新于 {{ lastRefreshedAt }}
+                </span>
+                <button
+                  class="btn btn-xs btn-primary"
+                  :disabled="refreshing"
+                  @click="refreshAll(true)"
+                >
+                  {{ refreshing ? "刷新中…" : "刷新数据" }}
+                </button>
+              </div>
+            </div>
             <div class="section-subtitle">
               详细展示病例记录信息，支持自动滚动浏览
             </div>
@@ -327,6 +341,8 @@
 export default {
   data() {
     return {
+      refreshing: false,
+      lastRefreshedAt: "",
       // 原有数据表格配置（作为第 7 部分保留）
       config: {
         header: [],
@@ -393,16 +409,36 @@ export default {
   },
   async created() {
     await this.delay(1500);
-    await Promise.all([
-      this.getTableList(),
-      this.fetchStatistics(),
-      this.fetchDataSources(),
-      this.fetchVersions(),
-    ]);
+    await this.refreshAll(false);
   },
   methods: {
     delay(ms) {
       return new Promise((resolve) => setTimeout(resolve, ms));
+    },
+    async refreshAll(notify = false) {
+      if (this.refreshing) return;
+      this.refreshing = true;
+      try {
+        await Promise.all([
+          this.getTableList(),
+          this.fetchStatistics(),
+          this.fetchDataSources(),
+          this.fetchVersions(),
+        ]);
+        this.lastRefreshedAt = new Date().toLocaleTimeString("zh-CN", {
+          hour12: false,
+        });
+        if (notify) {
+          this.$message({ message: "数据已刷新", type: "success" });
+        }
+      } catch (error) {
+        console.error("刷新数据失败:", error);
+        if (notify) {
+          this.$message.error("刷新失败，请检查后端服务是否正常");
+        }
+      } finally {
+        this.refreshing = false;
+      }
     },
     async getTableList() {
       const res = await this.$http.get("/tableData");
@@ -811,6 +847,28 @@ export default {
   font-weight: bold;
   text-align: left;
   margin-bottom: 6px;
+}
+
+.section-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.section-title-row .section-title {
+  margin-bottom: 6px;
+}
+
+.section-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.refresh-time {
+  color: #6c819c;
+  font-size: 11px;
 }
 
 .section-subtitle {
