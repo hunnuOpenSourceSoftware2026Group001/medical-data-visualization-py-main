@@ -1,0 +1,21 @@
+@startuml 活动图（疾病预测）
+title 疾病预测业务活动图
+start
+:用户提交病情描述；
+:接口层校验 content 是否为空；
+if (content 为空?) then (是)
+  :返回 400 参数错误；
+  stop
+else (否)
+endif
+:门面调用 PredictionService.predict();
+if (模型已训练?) then (否)
+  :读取所有病例 content/type；
+  :TF-IDF + 朴素贝叶斯训练；
+endif
+:对输入文本向量化并预测疾病与置信度；
+:计算与历史病例余弦相似度，取 Top3；
+:生成健康建议；
+:返回 {disease, confidence, advice, similarCases}；
+stop
+@enduml
