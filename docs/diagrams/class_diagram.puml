@@ -1,0 +1,134 @@
+@startuml 类图
+skinparam monochrome true
+hide empty members
+
+class MedicalCase {
+  +id:int
+  +type:string
+  +gender:string
+  +age:int
+  +time:string
+  +content:string
+  +docName:string
+  +docHospital:string
+  +department:string
+  +detailUrl:string
+  +height:float
+  +weight:float
+  +illDuration:string
+  +allergy:string
+  +to_dict():dict
+  +from_row(row):MedicalCase
+}
+
+class ReportTemplate {
+  +id:int
+  +name:string
+  +sections:string
+  +status:string
+  +created_at:string
+  +to_dict():dict
+}
+
+class Settings <<singleton>> {
+  +db_backend:string
+  +sqlite_path:string
+  +instance():Settings
+}
+
+class Database <<singleton>> {
+  +get_connection():Connection
+  +initialize(with_seed:bool):void
+}
+
+class BaseRepository <<repository>> {
+  {abstract} table:string
+  {abstract} entity_cls:Class
+  +list_all(order_by,limit,offset,where,params):List
+  +get_by_id(id):Entity
+  +count(where,params):int
+  +insert(fields):int
+  +update(id,fields):int
+  +delete(id):int
+  +group_count(column):List
+}
+
+class CaseRepository <<repository>> {
+  +search(keyword,disease_type,department,gender,limit,offset):List<MedicalCase>
+  +count_search(keyword,disease_type,department,gender):int
+  +recent(limit):List<MedicalCase>
+  +all_content():List<Map>
+}
+
+class TemplateRepository <<repository>> {
+  +list_by_status(status):List<ReportTemplate>
+  +create(name,sections,status):int
+  +set_status(id,status):int
+}
+
+class ApplicationFacade <<facade,singleton>> {
+  +instance():ApplicationFacade
+  +case_service:CaseService
+  +statistics_service:StatisticsService
+  +prediction_service:PredictionService
+  +report_service:ReportService
+  +consultation_service:ConsultationService
+}
+
+class CaseService <<service>> {
+  +page(page,size,keyword,disease_type,department,gender):Map
+  +get(id):MedicalCase
+  +create(payload):MedicalCase
+  +update(id,payload):MedicalCase
+  +delete(id):void
+  +export_csv():string
+  +import_csv(text):Map
+}
+
+class StatisticsService <<service>> {
+  +dashboard():Map
+}
+
+class PredictionService <<service>> {
+  +predict(content):Map{disease,confidence,advice,similarCases}
+}
+
+class ReportService <<service>> {
+  +list_templates(status):List
+  +create_template(name,sections,status):Map
+  +generate(template_id,filters):Map
+  +export_docx(report):bytes
+}
+
+class ConsultationService <<service>> {
+  +chat(message):Map{answer,source,disclaimer}
+}
+
+class ApiResponse {
+  +success(data,message):Map
+  +error(message,code,data):Map
+}
+
+class BizException <<exception>> {
+  +message:string
+  +code:int
+}
+class ParamException <<exception>>
+class NotFoundException <<exception>>
+
+MedicalCase "1" *-- "0..*" Database : 存储在
+Database "1" o-- "*" BaseRepository : 提供连接
+BaseRepository <|-- CaseRepository
+BaseRepository <|-- TemplateRepository
+CaseRepository "1" o-- "1..*" CaseService
+TemplateRepository "1" o-- "1" ReportService
+CaseRepository "1" o-- "1" StatisticsService
+CaseRepository "1" o-- "1" PredictionService
+ApplicationFacade "1" o-- "1" CaseService
+ApplicationFacade "1" o-- "1" StatisticsService
+ApplicationFacade "1" o-- "1" PredictionService
+ApplicationFacade "1" o-- "1" ReportService
+ApplicationFacade "1" o-- "1" ConsultationService
+ApiResponse <|.. BizException
+Settings o-- Database : 配置
+@enduml

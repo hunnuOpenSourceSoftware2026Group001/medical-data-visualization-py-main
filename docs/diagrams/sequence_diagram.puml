@@ -1,0 +1,41 @@
+@startuml 时序图（新增病例 + 疾病预测）
+title 新增病例与疾病预测流程
+actor 用户 as User
+participant "接口层\nBlueprint" as API
+participant "门面单例\nApplicationFacade" as Facade
+participant "服务层\nCaseService" as CaseSvc
+participant "服务层\nPredictionSvc" as PredSvc
+participant "仓储层\nCaseRepository" as Repo
+participant "数据源\nDatabase/SQLite" as DB
+
+' --- 新增病例 ---
+User -> API : POST /cases (JSON)
+API -> Facade : case_service.create(payload)
+Facade -> CaseSvc : create(payload)
+CaseSvc -> CaseSvc : _validate / _pick_fields
+CaseSvc -> Repo : insert(fields)
+Repo -> DB : INSERT INTO cases
+DB --> Repo : lastrowid
+Repo --> CaseSvc : new_id
+CaseSvc -> Repo : get_by_id(new_id)
+Repo -> DB : SELECT ...
+DB --> Repo : row
+Repo --> CaseSvc : MedicalCase
+CaseSvc --> Facade : case dict
+Facade --> API : result
+API --> User : 200 {code,data,timestamp}
+
+' --- 疾病预测 ---
+User -> API : POST /prediction/predict {content}
+API -> Facade : prediction_service.predict(content)
+Facade -> PredSvc : predict(content)
+PredSvc -> PredSvc : _ensure_trained() (TF-IDF+NB)
+PredSvc -> Repo : all_content()
+Repo -> DB : SELECT content,type FROM cases
+DB --> Repo : rows
+Repo --> PredSvc : list
+PredSvc --> PredSvc : fit/predict/similarity
+PredSvc --> Facade : {disease,confidence,advice,similarCases}
+Facade --> API : result
+API --> User : 200 {...}
+@enduml

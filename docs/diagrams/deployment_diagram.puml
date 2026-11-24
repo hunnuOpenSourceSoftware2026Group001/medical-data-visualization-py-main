@@ -1,0 +1,26 @@
+@startuml 部署图
+skinparam componentStyle rectangle
+
+node "用户浏览器\n(Vue 前端, 8080)" as Browser
+node "Web 服务器\n(Flask, 5000)" as WebServer
+node "应用进程\nmedical_system\n(接口/服务/仓储/数据)" as App
+database "SQLite 数据库文件\n(data/medical.db)" as SQLite
+database "MySQL 数据库\n(medicalinfo.cases)" as MySQL
+cloud "DeepSeek API\n(可选)" as LLM
+
+Browser --> WebServer : HTTP/JSON (Axios)
+WebServer --> App : 进程内调用
+App --> SQLite : 读写（默认，零配置）
+App -.-> MySQL : 读写（MEDICAL_DB_BACKEND=mysql 时）
+App --> LLM : HTTPS（配置 DEEPSEEK_API_KEY 时）
+
+note right of WebServer
+  前后端分离：前端独立部署，
+  后端提供 REST 接口
+end note
+
+note right of App
+  分层：api -> service ->
+  repository -> data
+end note
+@enduml
